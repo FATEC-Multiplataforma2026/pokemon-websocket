@@ -1,0 +1,15 @@
+[Unit]
+Description=Pokemon WebSocket Server
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/pokemon-websocket
+ExecStart=/usr/bin/java -Xmx256m -jar /home/ec2-user/pokemon-websocket/pokemon-websocket-1.0.jar
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
