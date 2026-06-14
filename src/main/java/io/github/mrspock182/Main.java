@@ -11,9 +11,9 @@ public class Main {
         Server server = new Server("0.0.0.0", port, "/ws", null, BattleEndpoint.class);
         server.start();
 
-        System.out.println("Pokemon WebSocket server running on ws://0.0.0.0:" + port + "/ws/battle");
-        System.out.println("Connect with: ws://<host>:" + port + "/ws/battle?username=<your-username>");
-        System.out.println("Press ENTER to stop.");
+//        System.out.println("Pokemon WebSocket server running on ws://0.0.0.0:" + port + "/ws/battle");
+//        System.out.println("Connect with: ws://<host>:" + port + "/ws/battle?username=<your-username>");
+//        System.out.println("Press ENTER to stop.");
 
         System.in.read();
         server.stop();
