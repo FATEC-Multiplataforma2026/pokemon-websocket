@@ -3,6 +3,8 @@ package io.github.mrspock182;
 import io.github.mrspock182.endpoint.BattleEndpoint;
 import org.glassfish.tyrus.server.Server;
 
+import java.util.concurrent.CountDownLatch;
+
 public class Main {
 
     public static void main(String[] args) throws Exception {
@@ -11,11 +13,15 @@ public class Main {
         Server server = new Server("0.0.0.0", port, "/ws", null, BattleEndpoint.class);
         server.start();
 
-//        System.out.println("Pokemon WebSocket server running on ws://0.0.0.0:" + port + "/ws/battle");
-//        System.out.println("Connect with: ws://<host>:" + port + "/ws/battle?username=<your-username>");
-//        System.out.println("Press ENTER to stop.");
+        System.out.println("Pokemon WebSocket server running on ws://0.0.0.0:" + port + "/ws/battle");
 
-        System.in.read();
-        server.stop();
+        CountDownLatch latch = new CountDownLatch(1);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutting down...");
+            server.stop();
+            latch.countDown();
+        }));
+
+        latch.await();
     }
 }
