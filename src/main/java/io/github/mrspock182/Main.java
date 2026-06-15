@@ -21,7 +21,6 @@ public class Main {
             server.stop();
             latch.countDown();
         }));
-
         latch.await();
     }
 }
