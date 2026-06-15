@@ -1,15 +1,64 @@
 [Unit]
 Description=Pokemon WebSocket Server
 After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
 [Service]
 User=ec2-user
 WorkingDirectory=/home/ec2-user/pokemon-websocket
-ExecStart=/usr/bin/java -Xmx1g -jar /home/ec2-user/pokemon-websocket/pokemon-websocket-1.0.jar
+
+# ── JVM tuning para t4g.micro (ARM64 Graviton2 · 1 GB RAM · 2 vCPU) ──────────
+#
+# Distribuição de memória estimada no host (1024 MB total):
+#   SO + daemons      ~180 MB
+#   Metaspace         ~48 MB  (MaxMetaspaceSize)
+#   Code Cache        ~64 MB  (ReservedCodeCacheSize)
+#   Thread stacks     ~32 MB  (~128 threads × 256 KB)
+#   Heap (Xmx)       ~512 MB
+#   Margem            ~188 MB
+#   ─────────────────────────
+#   Total estimado    ~1024 MB
+#
+# G1GC é preferível a SerialGC aqui: conexões WebSocket concorrentes criam
+# objetos de curta duração em paralelo — G1 coleta jovens sem parar o mundo.
+# -Xmx1g causaria OOM kill do kernel pois não sobra memória para o SO.
+# ─────────────────────────────────────────────────────────────────────────────
+ExecStart=/usr/bin/java \
+  -server \
+  -Xms64m \
+  -Xmx512m \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=100 \
+  -XX:G1HeapRegionSize=4m \
+  -XX:+UseStringDeduplication \
+  -XX:MetaspaceSize=32m \
+  -XX:MaxMetaspaceSize=48m \
+  -XX:ReservedCodeCacheSize=64m \
+  -XX:CompressedClassSpaceSize=32m \
+  -Xss256k \
+  -XX:+TieredCompilation \
+  -XX:+OptimizeStringConcat \
+  -XX:+ExitOnOutOfMemoryError \
+  -Djava.awt.headless=true \
+  -Dfile.encoding=UTF-8 \
+  -jar /home/ec2-user/pokemon-websocket/pokemon-websocket-1.0.jar
+
+# Garante reinício limpo em OOM ou crash
 Restart=on-failure
 RestartSec=5
+
+# Limita o processo a 700 MB de memória real no cgroup —
+# mata o processo antes do kernel OOM killer agir de forma aleatória
+MemoryMax=700M
+MemorySwapMax=0
+
+# Baixa prioridade de OOM para proteger o SO em caso de pressão de memória
+OOMScoreAdjust=200
+
 StandardOutput=journal
 StandardError=journal
+SyslogIdentifier=pokemon-websocket
 
 [Install]
 WantedBy=multi-user.target
